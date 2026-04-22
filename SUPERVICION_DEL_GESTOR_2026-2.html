@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supervisión del Gestor 2026</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; background: #d0d0d0; color: #111; }
+
+.print-btn {
+  position: fixed; top: 12px; right: 16px;
+  background: #1a5276; color: white; border: none;
+  padding: 8px 18px; border-radius: 4px; font-size: 13px; cursor: pointer; z-index: 999;
+}
+
+/* PÁGINA 1 — altura fija A4 sin desbordarse */
+.page {
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: white;
+  margin: 18px auto;
+  padding: 7mm 9mm 5mm 9mm;
+  border: 1px solid #aaa;
+  display: flex;
+  flex-direction: column;
+  page-break-after: always;
+}
+
+.titulo-row { display: flex; align-items: center; gap: 18px; margin-bottom: 5px; flex-shrink: 0; }
+.check-tipo { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.check-tipo input[type="checkbox"] { width: 15px; height: 15px; accent-color: #1a5276; }
+.check-tipo span { font-size: 16px; font-weight: 700; }
+.tipo-hint { font-size: 10px; color: #666; margin-left: auto; }
+
+.outer-box { border: 1.5px solid #333; padding: 4px 7px; margin-bottom: 4px; flex-shrink: 0; }
+.form-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 2px; flex-wrap: wrap; }
+.form-row label { white-space: nowrap; font-weight: 700; font-size: 10.5px; }
+.fi { flex: 1; min-width: 50px; }
+
+input[type="text"] {
+  font-family: Arial, sans-serif; font-size: 10.5px;
+  border: none; border-bottom: 1px dotted #555;
+  outline: none; background: transparent; color: #111; padding: 0 2px; width: 100%;
+}
+input[type="text"]:focus { border-bottom-color: #1a5276; background: #eef4ff; }
+input[type="checkbox"] { width: 12px; height: 12px; cursor: pointer; accent-color: #1a5276; vertical-align: middle; }
+
+.gic-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.gic-row b { font-size: 10px; }
+.gic-opt { display: inline-flex; align-items: center; gap: 2px; border: 1px solid #444; padding: 1px 3px; cursor: pointer; font-size: 9.5px; }
+
+.sec-bar { background: #1a2e4a; color: white; text-align: center; font-size: 11px; font-weight: 700; padding: 2px 0; margin: 3px 0; letter-spacing: 1px; flex-shrink: 0; }
+
+/* Tarjeta cliente — ocupa espacio disponible por igual */
+.ccard { border: 1.5px dashed #444; padding: 3px 6px; flex: 1; display: flex; flex-direction: column; min-height: 0; margin-bottom: 3px; }
+.cname-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 2px; flex-shrink: 0; }
+.cname-row label { font-weight: 700; font-size: 10.5px; white-space: nowrap; }
+.cinfo { display: flex; gap: 8px; margin-bottom: 2px; flex-wrap: wrap; align-items: baseline; flex-shrink: 0; }
+.cinfo .lb { font-weight: 700; font-size: 10px; white-space: nowrap; }
+.cinfo input { width: 60px; font-size: 10px; }
+.att-row { display: flex; gap: 10px; margin-bottom: 2px; align-items: center; flex-shrink: 0; }
+.chk-lbl { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; font-size: 10px; white-space: nowrap; }
+
+.cgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; flex: 1; min-height: 0; }
+.col-hdr { font-size: 9px; font-weight: 700; border: 1px solid #333; padding: 1px 3px; margin-bottom: 2px; display: block; }
+.ci { display: flex; align-items: flex-start; gap: 3px; margin-bottom: 1px; font-size: 9.5px; line-height: 1.2; }
+.obs-col { display: flex; flex-direction: column; min-height: 0; }
+.obs-col label { font-weight: 700; font-size: 9.5px; margin-bottom: 1px; }
+textarea.obs {
+  font-family: Arial, sans-serif; font-size: 10px;
+  border: 1px dotted #555; resize: none; outline: none;
+  background: transparent; padding: 2px 3px; flex: 1; width: 100%;
+}
+textarea.obs:focus { background: #eef4ff; }
+
+.logo-row { text-align: right; font-size: 9px; color: #666; font-style: italic; flex-shrink: 0; padding-top: 2px; }
+
+/* PÁGINA 2 */
+.page2 { width: 210mm; min-height: 297mm; background: white; margin: 18px auto; padding: 9mm; border: 1px solid #aaa; page-break-after: always; }
+.sol-title { text-align: center; font-size: 15px; font-weight: 700; margin-bottom: 7px; }
+.two-col-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+.ni { display: flex; align-items: flex-start; gap: 5px; margin-bottom: 4px; font-size: 10.5px; }
+.ni label { flex: 1; }
+.blist { list-style: disc; padding-left: 14px; font-size: 10px; line-height: 1.65; }
+.retro-title { text-align: center; font-size: 14px; font-weight: 700; margin: 10px 0 5px 0; }
+.retro-sec { margin-bottom: 7px; }
+.retro-sec label { font-size: 10.5px; font-weight: 700; display: block; margin-bottom: 2px; }
+.retro-ta { width: 100%; height: 72px; background: repeating-linear-gradient(transparent,transparent 17px,#bbb 17px,#bbb 18px); border: none; border-bottom: 1px dotted #555; resize: none; font-family: Arial; font-size: 11px; padding: 1px 4px; outline: none; }
+.retro-ta:focus { background: #eef4ff; }
+.sigs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px; }
+.sig-blk { text-align: center; font-size: 10px; }
+canvas.sig-pad { display: block; width: 100%; height: 75px; border: 1.5px solid #333; border-radius: 3px; cursor: crosshair; background: #fafafa; touch-action: none; }
+.sig-act { display: flex; justify-content: space-between; margin-top: 2px; }
+.sig-act button { font-size: 9px; padding: 2px 7px; border: 1px solid #888; background: #fff; cursor: pointer; border-radius: 2px; }
+.sig-nm { font-size: 10px; font-weight: 700; color: #1a5276; margin-top: 2px; }
+.sig-lbl { margin-top: 3px; font-weight: 700; border-top: 1.5px solid #333; padding-top: 3px; font-size: 10px; }
+
+/* PÁGINA 3 */
+.herr-page { width: 210mm; min-height: 297mm; background: white; margin: 18px auto; padding: 7mm 8mm; border: 1px solid #aaa; page-break-after: always; }
+.herr-hdr { background: #1a2e4a; color: white; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-radius: 2px; }
+.herr-hdr .ht { font-size: 14px; font-weight: 700; }
+.herr-hdr .hs { font-size: 10px; margin-top: 2px; }
+.herr-hdr input { background: transparent; color: white; border: none; border-bottom: 1px solid #fff; outline: none; font-size: 10.5px; width: 80px; text-align: center; }
+.cat-bar { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 6px; }
+.cat-it { padding: 2px 8px; font-size: 9.5px; font-weight: 700; color: white; border-radius: 2px; }
+.herr-info { border: 1.5px solid #333; padding: 5px 10px; margin-bottom: 8px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.herr-info span { font-weight: 700; font-size: 11px; white-space: nowrap; }
+.herr-info input[type="text"] { border: none; border-bottom: 1px dotted #555; outline: none; font-size: 11px; background: transparent; min-width: 120px; flex: 1; }
+.herr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+.cat-hdr { color: white; font-weight: 700; font-size: 10px; padding: 3px 7px; margin-bottom: 3px; border-radius: 2px; }
+.cat-body { border: 1px solid #ccc; padding: 4px 8px; margin-bottom: 6px; border-radius: 2px; }
+.crow { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 10.5px; }
+.crow input[type="checkbox"] { width: 13px; height: 13px; flex-shrink: 0; }
+.km-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 10.5px; }
+.km-row label { font-weight: 700; white-space: nowrap; }
+.km-row input[type="text"] { flex: 1; font-size: 10.5px; }
+.obs-hdr { background: #1a2e4a; color: white; font-weight: 700; font-size: 10px; padding: 3px 7px; margin-bottom: 3px; border-radius: 2px; }
+.obs-ta { width: 100%; height: 75px; border: 1px solid #1a2e4a; resize: vertical; font-family: Arial; font-size: 10.5px; padding: 4px 6px; outline: none; border-radius: 2px; }
+.firma-blk { border: 1.5px solid #333; padding: 7px 10px; margin-top: 6px; }
+.firma-blk .flbl { font-size: 10px; font-weight: 700; text-align: center; margin-bottom: 4px; color: #1a2e4a; }
+canvas#sig-herr-gestor { display: block; width: 100%; max-width: 360px; height: 85px; border: 2px solid #1a2e4a; border-radius: 4px; cursor: crosshair; background: #fafafa; touch-action: none; margin: 0 auto; }
+.fbot { border-top: 1.5px solid #333; margin-top: 5px; padding-top: 3px; text-align: center; font-size: 10.5px; font-weight: 700; }
+.herr-footer { margin-top: 8px; font-size: 10px; display: flex; justify-content: space-between; border-top: 1px solid #333; padding-top: 5px; flex-wrap: wrap; gap: 6px; }
+.herr-footer span { font-weight: 700; }
+
+/* Sí / No inline */
+.sino-row { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.sino-btn { display: inline-flex; align-items: center; gap: 2px; border: 1.5px solid #555; border-radius: 3px; padding: 1px 5px; cursor: pointer; font-size: 9.5px; font-weight: 700; white-space: nowrap; user-select: none; transition: background .15s, color .15s; }
+.sino-btn.si  { border-color: #27ae60; }
+.sino-btn.si.active  { background: #27ae60; color: #fff; }
+.sino-btn.no  { border-color: #c0392b; }
+.sino-btn.no.active  { background: #c0392b; color: #fff; }
+.crow-sino { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 10.5px; flex-wrap: wrap; }
+.crow-sino label { flex: 1; min-width: 100px; }
+.item-comment { width: 100%; margin-top: 2px; margin-bottom: 4px; margin-left: 0; font-family: Arial, sans-serif; font-size: 9.5px; border: none; border-bottom: 1px dotted #888; outline: none; background: #fafff8; padding: 1px 3px; color: #333; }
+.item-comment:focus { background: #eef4ff; border-bottom-color: #1a5276; }
+
+@media print {
+  body { background: white; }
+  .print-btn { display: none; }
+  .page, .page2, .herr-page { margin: 0; border: none; }
+  .page { width: 100%; }
+  canvas { background: white !important; }
+  .sig-act, .firma-blk button { display: none; }
+}
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+
+<!-- ═══════════════ PÁGINA 1 ═══════════════ -->
+<div class="page">
+
+  <div class="titulo-row">
+    <label class="check-tipo"><input type="checkbox"> <span>Acompañamiento</span></label>
+    <label class="check-tipo"><input type="checkbox"> <span>Supervisión</span></label>
+    <span class="tipo-hint">Marque el tipo de visita</span>
+  </div>
+
+  <div class="outer-box">
+    <div class="form-row">
+      <label>Fecha:</label><div class="fi" style="max-width:95px"><input type="text" placeholder="dd/mm/2026"></div>
+      <label>Gerencia:</label><div class="fi" style="flex:2"><input type="text" value="Ixtapa Zihuatanejo"></div>
+      <label>Semana:</label><div class="fi" style="max-width:50px"><input type="text"></div>
+    </div>
+    <div class="form-row">
+      <label>Gestor:</label><div class="fi" style="flex:2"><input type="text"></div>
+      <label>Líder:</label><div class="fi" style="flex:2"><input type="text" value="Martín López Morales"></div>
+    </div>
+    <div class="form-row">
+      <label>Tareas realizadas:</label><div class="fi"><input type="text"></div>
+      <label>Cobrado $</label><div class="fi"><input type="text"></div>
+      <label>Alcance:</label><div class="fi"><input type="text"></div>
+    </div>
+    <div class="form-row">
+      <label>Hora 1ª gestión:</label><div class="fi"><input type="text"></div>
+      <label>Herramientas:</label><div class="fi" style="flex:1.2"><input type="text"></div>
+      <label>Imagen:</label><div class="fi" style="flex:1.2"><input type="text"></div>
+    </div>
+    <div class="form-row">
+      <label>¿Conoce su mandato y funciones?</label><div class="fi" style="max-width:55px"><input type="text"></div>
+      <label>¿Conoce esquema de compensación?</label><div class="fi" style="max-width:55px"><input type="text"></div>
+    </div>
+    <div class="form-row">
+      <label>¿Se hizo conexión rápida?</label>
+      <div class="fi"><input type="text" placeholder="Escriba aquí..."></div>
+    </div>
+    <div class="form-row" style="align-items:center;">
+      <label>Se registra tarea en ZEUS:</label><div class="fi" style="max-width:90px"><input type="text"></div>
+      <div class="gic-row">
+        <b>Clasificación GIC:</b>
+        <label class="gic-opt"><input type="radio" name="gic"> Top</label>
+        <label class="gic-opt"><input type="radio" name="gic"> Satisfactorio</label>
+        <label class="gic-opt"><input type="radio" name="gic"> Medio Alto</label>
+        <label class="gic-opt"><input type="radio" name="gic"> Medio Bajo</label>
+        <label class="gic-opt"><input type="radio" name="gic"> Bottom</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-bar">Acompañamiento &amp; Supervisión</div>
+
+  <!-- CLIENTE 1 -->
+  <div class="ccard">
+    <div class="cname-row"><label>Nombre del cliente:</label><input type="text"></div>
+    <div class="cinfo">
+      <span class="lb">Semanas:</span><input type="text" style="width:55px">
+      <span class="lb">Saldo:</span><input type="text" style="width:65px">
+      <span class="lb">Pago sugerido:</span><input type="text" style="width:65px">
+      <span class="lb">Alternativas:</span><input type="text" style="width:80px">
+    </div>
+    <div class="att-row">
+      <label class="chk-lbl"><input type="checkbox"> Atendió el cliente</label>
+      <label class="chk-lbl"><input type="checkbox"> Atendió familiar</label>
+      <label class="chk-lbl"><input type="checkbox"> No se encontró a nadie</label>
+    </div>
+    <div class="cgrid">
+      <div>
+        <span class="col-hdr">Camino para cobrar mejor</span>
+        <div class="ci"><input type="checkbox"><label>1.- Saludo y presentación</label></div>
+        <div class="ci"><input type="checkbox"><label>2.- Informa del adeudo</label></div>
+        <div class="ci"><input type="checkbox"><label>3.- Indaga el motivo del atraso</label></div>
+        <div class="ci"><input type="checkbox"><label>4.- Cadena de soluciones</label></div>
+        <div class="ci"><input type="checkbox"><label>5.- Manejo de objeciones</label></div>
+        <div class="ci"><input type="checkbox"><label>6.- Cierre y despedida</label></div>
+      </div>
+      <div>
+        <span class="col-hdr">3 Pasos de búsqueda</span>
+        <div class="ci"><input type="checkbox"><label>Visita Vecinos</label></div>
+        <div class="ci"><input type="checkbox"><label>Marca y/o visita aval y/o referencias</label></div>
+        <div class="ci"><input type="checkbox"><label>Conoce y visita trabajo</label></div>
+        <div class="ci"><input type="checkbox"><label>Revisó expediente y/o filtro en sistema</label></div>
+        <div class="ci"><input type="checkbox"><label>Actualiza datos del cliente en PAX</label></div>
+        <div class="ci"><input type="checkbox"><label>Sinergia con Homólogo/sucursal</label></div>
+      </div>
+      <div class="obs-col"><label>Observaciones</label><textarea class="obs" placeholder="Escriba aquí..."></textarea></div>
+    </div>
+  </div>
+
+  <!-- CLIENTE 2 -->
+  <div class="ccard">
+    <div class="cname-row"><label>Nombre del cliente:</label><input type="text"></div>
+    <div class="cinfo">
+      <span class="lb">Semanas:</span><input type="text" style="width:55px">
+      <span class="lb">Saldo:</span><input type="text" style="width:65px">
+      <span class="lb">Pago sugerido:</span><input type="text" style="width:65px">
+      <span class="lb">Alternativas:</span><input type="text" style="width:80px">
+    </div>
+    <div class="att-row">
+      <label class="chk-lbl"><input type="checkbox"> Atendió el cliente</label>
+      <label class="chk-lbl"><input type="checkbox"> Atendió familiar</label>
+      <label class="chk-lbl"><input type="checkbox"> No se encontró a nadie</label>
+    </div>
+    <div class="cgrid">
+      <div>
+        <span class="col-hdr">Camino para cobrar mejor</span>
+        <div class="ci"><input type="checkbox"><label>1.- Saludo y presentación</label></div>
+        <div class="ci"><input type="checkbox"><label>2.- Informa del adeudo</label></div>
+        <div class="ci"><input type="checkbox"><label>3.- Indaga el motivo del atraso</label></div>
+        <div class="ci"><input type="checkbox"><label>4.- Cadena de soluciones</label></div>
+        <div class="ci"><input type="checkbox"><label>5.- Manejo de objeciones</label></div>
+        <div class="ci"><input type="checkbox"><label>6.- Cierre y despedida</label></div>
+      </div>
+      <div>
+        <span class="col-hdr">3 Pasos de búsqueda</span>
+        <div class="ci"><input type="checkbox"><label>Visita Vecinos</label></div>
+        <div class="ci"><input type="checkbox"><label>Marca y/o visita aval y/o referencias</label></div>
+        <div class="ci"><input type="checkbox"><label>Conoce y visita trabajo</label></div>
+        <div class="ci"><input type="checkbox"><label>Revisó expediente y/o filtro en sistema</label></div>
+        <div class="ci"><input type="checkbox"><label>Actualiza datos del cliente en PAX</label></div>
+        <div class="ci"><input type="checkbox"><label>Sinergia con Homólogo/sucursal</label></div>
+      </div>
+      <div class="obs-col"><label>Observaciones</label><textarea class="obs" placeholder="Escriba aquí..."></textarea></div>
+    </div>
+  </div>
+
+  <!-- CLIENTE 3 -->
+  <div class="ccard">
+    <div class="cname-row"><label>Nombre del cliente:</label><input type="text"></div>
+    <div class="cinfo">
+      <span class="lb">Semanas:</span><input type="text" style="width:55px">
+      <span class="lb">Saldo:</span><input type="text" style="width:65px">
+      <span class="lb">Pago sugerido:</span><input type="text" style="width:65px">
+      <span class="lb">Alternativas:</span><input type="text" style="width:80px">
+    </div>
+    <div class="att-row">
+      <label class="chk-lbl"><input type="checkbox"> Atendió el cliente</label>
+      <label class="chk-lbl"><input type="checkbox"> Atendió familiar</label>
+      <label class="chk-lbl"><input type="checkbox"> No se encontró a nadie</label>
+    </div>
+    <div class="cgrid">
+      <div>
+        <span class="col-hdr">Camino para cobrar mejor</span>
+        <div class="ci"><input type="checkbox"><label>1.- Saludo y presentación</label></div>
+        <div class="ci"><input type="checkbox"><label>2.- Informa del adeudo</label></div>
+        <div class="ci"><input type="checkbox"><label>3.- Indaga el motivo del atraso</label></div>
+        <div class="ci"><input type="checkbox"><label>4.- Cadena de soluciones</label></div>
+        <div class="ci"><input type="checkbox"><label>5.- Manejo de objeciones</label></div>
+        <div class="ci"><input type="checkbox"><label>6.- Cierre y despedida</label></div>
+      </div>
+      <div>
+        <span class="col-hdr">3 Pasos de búsqueda</span>
+        <div class="ci"><input type="checkbox"><label>Visita Vecinos</label></div>
+        <div class="ci"><input type="checkbox"><label>Marca y/o visita aval y/o referencias</label></div>
+        <div class="ci"><input type="checkbox"><label>Conoce y visita trabajo</label></div>
+        <div class="ci"><input type="checkbox"><label>Revisó expediente y/o filtro en sistema</label></div>
+        <div class="ci"><input type="checkbox"><label>Actualiza datos del cliente en PAX</label></div>
+        <div class="ci"><input type="checkbox"><label>Sinergia con Homólogo/sucursal</label></div>
+      </div>
+      <div class="obs-col"><label>Observaciones</label><textarea class="obs" placeholder="Escriba aquí..."></textarea></div>
+    </div>
+  </div>
+
+  <div class="logo-row">Gerencia Ixtapa Zihuatanejo &nbsp;|&nbsp; 2026</div>
+</div>
+
+<!-- ═══════════════ PÁGINA 2: SOLICITUDES ═══════════════ -->
+<div class="page2">
+  <div class="sol-title">Solicitudes</div>
+  <div class="outer-box">
+    <div class="form-row">
+      <label>Gerencia:</label><div class="fi" style="flex:2"><input type="text" value="Ixtapa Zihuatanejo"></div>
+      <label>Líder:</label><div class="fi" style="flex:2"><input type="text" value="Martín López Morales"></div>
+    </div>
+    <div class="form-row" style="margin-top:4px">
+      <label>Nombre del cliente:</label><div class="fi" style="flex:3"><input type="text"></div>
+    </div>
+    <div class="form-row" style="margin-top:4px">
+      <label>Tipo de solicitud:</label><div class="fi"><input type="text"></div>
+      <label class="chk-lbl"><input type="checkbox"> Contactabilidad del Cliente</label>
+      <label class="chk-lbl"><input type="checkbox"> Contactabilidad Laboral</label>
+      <label class="chk-lbl"><input type="checkbox"> Red de contacto ampliada</label>
+    </div>
+    <div class="two-col-list">
+      <div>
+        <div class="ni"><label>1.- Se presenta e informa motivo de la visita</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+        <div class="ni"><label>2.- Explica el proceso de la investigación</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+        <div class="ni"><label>3.- Realiza la verificación dentro del domicilio</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+        <div class="ni"><label>4.- Solicita al cliente documentos originales</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+        <div class="ni"><label>5.- Valida Referencias</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+        <div class="ni"><label>6.- Informa el estatus al cliente</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+        <div class="ni"><label>7.- Asesora al cliente en descarga de App</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+      </div>
+      <div>
+        <div class="ni"><label>8.- Explica Beneficios de la línea de crédito</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+        <div class="ni"><label>9.- Hace recomendaciones en el uso correcto del crédito</label><input type="checkbox" style="width:14px;height:14px;flex-shrink:0"></div>
+        <ul class="blist">
+          <li>Cuida tu historial crediticio</li>
+          <li>Si pagas puntual, pagas menos y te ofrecemos la mejor tasa del mercado</li>
+          <li>En caso de pagos quincenales o mensuales, adelanta 3 o 5 abonos.</li>
+          <li>Paga a tiempo para no generar intereses moratorios.</li>
+          <li>El bien es tuyo hasta que finalices tus pagos.</li>
+          <li>La línea de crédito es personal e intransferible.</li>
+          <li>Realiza tus pagos por medio de la App o directamente en sucursal.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="retro-title">Retroalimentación y Coaching del Líder</div>
+  <div class="retro-sec"><label>Qué estás haciendo bien (llenado por líder)</label><textarea class="retro-ta"></textarea></div>
+  <div class="retro-sec"><label>Qué puedes mejorar (llenado por líder)</label><textarea class="retro-ta"></textarea></div>
+  <div class="retro-sec"><label>Compromisos del Gestor (llenado por gestor)</label><textarea class="retro-ta"></textarea></div>
+
+  <div class="sigs">
+    <div class="sig-blk">
+      <canvas class="sig-pad" id="sig-gestor"></canvas>
+      <div class="sig-act"><button onclick="clearSig('sig-gestor')">🗑 Borrar</button><span style="font-size:9px;color:#888">← Firmar aquí</span></div>
+      <div class="sig-nm"><input type="text" placeholder="Nombre del Gestor" style="text-align:center;border-bottom:1px solid #333;font-size:10px;font-weight:700;color:#1a5276;width:100%"></div>
+      <div class="sig-lbl">Nombre y firma del Gestor</div>
+    </div>
+    <div class="sig-blk">
+      <canvas class="sig-pad" id="sig-lider"></canvas>
+      <div class="sig-act"><button onclick="clearSig('sig-lider')">🗑 Borrar</button><span style="font-size:9px;color:#888">← Firmar aquí</span></div>
+      <div class="sig-nm" style="margin-top:3px;">Martín López Morales</div>
+      <div class="sig-lbl">Nombre y firma del Líder</div>
+    </div>
+    <div class="sig-blk">
+      <canvas class="sig-pad" id="sig-regional"></canvas>
+      <div class="sig-act"><button onclick="clearSig('sig-regional')">🗑 Borrar</button><span style="font-size:9px;color:#888">← Firmar aquí</span></div>
+      <div class="sig-nm" style="margin-top:3px;">Miguel Ángel Soriano Hernández</div>
+      <div class="sig-lbl">Nombre y firma del Regional</div>
+    </div>
+  </div>
+  <div class="logo-row" style="margin-top:10px;">Gerencia Ixtapa Zihuatanejo &nbsp;|&nbsp; 2026</div>
+</div>
+
+<!-- ═══════════════ PÁGINA 3: HERRAMIENTAS ═══════════════ -->
+<div class="herr-page">
+  <div class="herr-hdr">
+    <div>
+      <div class="ht">Supervisión de Herramientas del Gestor</div>
+      <div class="hs">Gerencia: Ixtapa Zihuatanejo</div>
+    </div>
+    <div style="text-align:right;font-size:10px;">
+      <div style="margin-bottom:3px;">Semana: <input placeholder=""></div>
+      <div>Fecha: <input placeholder="dd/mm/2026"></div>
+    </div>
+  </div>
+
+  <div class="cat-bar">
+    <div class="cat-it" style="background:#c0392b">No Negociable</div>
+    <div class="cat-it" style="background:#e67e22">5 No Negociables de Seguridad</div>
+    <div class="cat-it" style="background:#27ae60">Condiciones Motocicleta</div>
+    <div class="cat-it" style="background:#e74c3c">Equipo Protección y Uniforme</div>
+    <div class="cat-it" style="background:#d4a017;color:#111">Documentos</div>
+  </div>
+
+  <div class="herr-info">
+    <span>Nombre del Gestor:</span><input type="text" placeholder="Escriba el nombre...">
+    <span>Líder:</span><input type="text" value="Martín López Morales" style="max-width:180px">
+  </div>
+
+  <div class="herr-grid">
+    <div>
+      <div class="cat-hdr" style="background:#c0392b">NO NEGOCIABLE</div>
+      <div class="cat-body" style="border-color:#c0392b">
+        <div class="crow"><input type="checkbox"><label>Pax</label></div>
+        <div class="crow"><input type="checkbox"><label>Sim</label></div>
+        <div class="crow"><input type="checkbox"><label>Moto</label></div>
+        <div class="crow"><input type="checkbox"><label>Casco</label></div>
+      </div>
+      <div class="cat-hdr" style="background:#e67e22">5 NO NEGOCIABLES DE SEGURIDAD</div>
+      <div class="cat-body" style="border-color:#e67e22">
+        <div class="crow-sino"><label>Luces</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Claxon</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Direccionales</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Stop</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Batería adicional alarma</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Frenos / Balatas / Nivel</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Aceite</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Cadena lubricada</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Llantas / presión / TWI</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+      </div>
+      <div class="cat-hdr" style="background:#27ae60">CONDICIONES MOTOCICLETA</div>
+      <div class="cat-body" style="border-color:#27ae60">
+        <div class="crow-sino"><label>Caja Shad</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Moto Limpia</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="km-row"><label>Kilometraje:</label><input type="text" placeholder="Escribir km..."></div>
+        <div class="crow-sino"><label>Servicio SI/NO</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Seguimiento a folios</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+      </div>
+    </div>
+    <div>
+      <div class="cat-hdr" style="background:#e74c3c">EQUIPO DE PROTECCIÓN Y UNIFORME</div>
+      <div class="cat-body" style="border-color:#e74c3c">
+        <div class="crow-sino"><label>Impermeable</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Esqueleto</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Rodilleras</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Botas</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Chaleco Vial</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Guantes</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Camisa</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Pantalón</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Chamarra Verde</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Chamarra Gerente</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+      </div>
+      <div class="cat-hdr" style="background:#d4a017;color:#111">DOCUMENTOS</div>
+      <div class="cat-body" style="border-color:#d4a017">
+        <div class="crow-sino"><label>Licencia de Conducir</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Tarjeta de Circulación</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Placa</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Tarjeta Si vale</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+        <div class="crow-sino"><label>Directorio en caja shad</label><div class="sino-row"><span class="sino-btn si" onclick="toggleSino(this)">✔ Sí</span><span class="sino-btn no" onclick="toggleSino(this)">✖ No</span></div></div>
+        <input class="item-comment" type="text" placeholder="Comentario...">
+      </div>
+      <div class="obs-hdr">OBSERVACIONES</div>
+      <textarea class="obs-ta" placeholder="Escriba las observaciones del checklist aquí..."></textarea>
+    </div>
+  </div>
+
+  <div class="firma-blk">
+    <div style="display:flex;gap:20px;margin-bottom:8px;flex-wrap:wrap;align-items:center;font-size:10.5px;">
+      <div><b>Fecha compromiso:</b> <input type="text" placeholder="dd/mm/2026" style="width:90px;border:none;border-bottom:1px dotted #555;outline:none;font-size:10.5px;background:transparent;"></div>
+      <div><b>Cumplió:</b> <input type="text" placeholder="SI / NO" style="width:60px;border:none;border-bottom:1px dotted #555;outline:none;font-size:10.5px;background:transparent;"></div>
+    </div>
+    <div class="flbl">FIRMA DEL GESTOR</div>
+    <canvas id="sig-herr-gestor"></canvas>
+    <div style="text-align:center;margin-top:4px;">
+      <button onclick="clearSigH()" style="font-size:9px;padding:3px 14px;border:1px solid #888;background:#fff;cursor:pointer;border-radius:3px;">🗑 Borrar firma</button>
+    </div>
+    <div class="fbot">Nombre y firma del Gestor</div>
+  </div>
+
+  <div class="herr-footer">
+    <div><span>Líder:</span> Martín López Morales</div>
+    <div><span>Regional:</span> Miguel Ángel Soriano Hernández</div>
+    <div style="font-style:italic;color:#666;font-size:9px;">Gerencia Ixtapa Zihuatanejo &nbsp;|&nbsp; 2026</div>
+  </div>
+</div>
+
+<script>
+function toggleSino(el) {
+  const row = el.closest('.sino-row');
+  row.querySelectorAll('.sino-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function initPad(id) {
+  const c = document.getElementById(id); if (!c) return;
+  const ctx = c.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = Math.max(r.width||160,160)*dpr; c.height = 75*dpr;
+  ctx.scale(dpr,dpr); ctx.strokeStyle='#1a2e4a'; ctx.lineWidth=1.8; ctx.lineCap='round'; ctx.lineJoin='round';
+  let draw=false,lx=0,ly=0;
+  const pos=e=>{const b=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:t.clientX-b.left,y:t.clientY-b.top};};
+  const s=e=>{e.preventDefault();draw=true;const p=pos(e);lx=p.x;ly=p.y;ctx.beginPath();ctx.arc(lx,ly,.8,0,Math.PI*2);ctx.fillStyle='#1a2e4a';ctx.fill();};
+  const m=e=>{if(!draw)return;e.preventDefault();const p=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.stroke();lx=p.x;ly=p.y;};
+  const e=()=>draw=false;
+  c.addEventListener('mousedown',s);c.addEventListener('mousemove',m);c.addEventListener('mouseup',e);c.addEventListener('mouseleave',e);
+  c.addEventListener('touchstart',s,{passive:false});c.addEventListener('touchmove',m,{passive:false});c.addEventListener('touchend',e);
+}
+function clearSig(id){const c=document.getElementById(id);if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
+
+function initPadHerr(){
+  const c=document.getElementById('sig-herr-gestor');if(!c)return;
+  const ctx=c.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const r=c.getBoundingClientRect();
+  c.width=Math.max(r.width||300,300)*dpr;c.height=85*dpr;
+  ctx.scale(dpr,dpr);ctx.strokeStyle='#1a2e4a';ctx.lineWidth=1.8;ctx.lineCap='round';ctx.lineJoin='round';
+  let draw=false,lx=0,ly=0;
+  const pos=e=>{const b=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:t.clientX-b.left,y:t.clientY-b.top};};
+  const s=e=>{e.preventDefault();draw=true;const p=pos(e);lx=p.x;ly=p.y;ctx.beginPath();ctx.arc(lx,ly,.8,0,Math.PI*2);ctx.fillStyle='#1a2e4a';ctx.fill();};
+  const m=e=>{if(!draw)return;e.preventDefault();const p=pos(e);ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.stroke();lx=p.x;ly=p.y;};
+  const e=()=>draw=false;
+  c.addEventListener('mousedown',s);c.addEventListener('mousemove',m);c.addEventListener('mouseup',e);c.addEventListener('mouseleave',e);
+  c.addEventListener('touchstart',s,{passive:false});c.addEventListener('touchmove',m,{passive:false});c.addEventListener('touchend',e);
+}
+function clearSigH(){const c=document.getElementById('sig-herr-gestor');if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}
+
+window.addEventListener('load',()=>{
+  ['sig-gestor','sig-lider','sig-regional'].forEach(initPad);
+  initPadHerr();
+});
+</script>
+</body>
+</html>
